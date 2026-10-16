@@ -1,0 +1,1029 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<link rel="icon" href="data:," />
+<title>SiteSafety AI — Crew Sign-In, Site Weather &amp; OSHA Audit Ledger</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<style>
+  :root{
+    --bg:#1E293B;
+    --bg-deep:#16202E;
+    --panel:#263448;
+    --panel-2:#2C3D55;
+    --line:#3D526E;
+    --ink:#F1F5F9;
+    --body:#CBD5E1;
+    --muted:#94A3B8;
+    --yellow:#FFD700;
+    --orange:#F97316;
+    --orange-dark:#EA580C;
+    --green:#4ADE80;
+    --red:#F87171;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;background:var(--bg);color:var(--body);
+    font-family:"Helvetica Neue",Helvetica,"Segoe UI",Arial,sans-serif;
+    font-size:16px;line-height:1.5;
+  }
+  h1,h2,h3{font-family:Georgia,"Times New Roman",serif;color:var(--ink);margin:0;}
+  a{color:var(--yellow);}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 16px 56px;}
+
+  /* ---------- Top strip ---------- */
+  .strip{
+    background:var(--bg-deep);border-bottom:4px solid var(--yellow);
+    padding:18px 16px 14px;
+  }
+  .strip .wrap{padding-bottom:0;}
+  .strip h1{font-size:clamp(26px,5vw,38px);letter-spacing:.5px;}
+  .strip h1 .ai{color:var(--yellow);}
+  .strip p{margin:6px 0 0;max-width:640px;color:var(--body);font-size:15px;}
+  .hazard{
+    height:10px;margin-top:14px;border-radius:2px;
+    background:repeating-linear-gradient(45deg,var(--yellow) 0 18px,#141B26 18px 36px);
+  }
+
+  /* ---------- Tabs ---------- */
+  nav.tabs{
+    position:sticky;top:0;z-index:40;background:var(--bg-deep);
+    border-bottom:1px solid var(--line);padding:10px 16px;
+  }
+  nav.tabs .row{max-width:1060px;margin:0 auto;display:flex;gap:8px;flex-wrap:wrap;}
+  .tab{
+    flex:1 1 0;min-width:104px;min-height:56px;border:2px solid var(--line);
+    background:var(--panel);color:var(--body);border-radius:10px;cursor:pointer;
+    font:inherit;font-weight:700;font-size:15px;padding:8px 6px;line-height:1.25;
+  }
+  .tab small{display:block;font-weight:400;font-size:12px;color:var(--muted);}
+  .tab.active{border-color:var(--yellow);color:var(--yellow);background:var(--panel-2);}
+  .tab.active small{color:var(--body);}
+
+  /* ---------- Panels ---------- */
+  section.phase{display:none;margin-top:22px;}
+  section.phase.active{display:block;}
+  .phase-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px;}
+  .phase-tag{
+    background:var(--yellow);color:#141B26;font-weight:800;font-size:12px;
+    letter-spacing:1.2px;padding:4px 10px;border-radius:4px;text-transform:uppercase;
+  }
+  .phase-head h2{font-size:clamp(21px,4vw,28px);}
+  .lede{margin:4px 0 18px;color:var(--body);max-width:680px;}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;margin-bottom:18px;
+  }
+  .card h3{font-size:19px;margin-bottom:12px;}
+  .card h3 .step{color:var(--yellow);font-family:inherit;font-size:13px;letter-spacing:1px;display:block;text-transform:uppercase;margin-bottom:2px;}
+
+  /* ---------- Forms ---------- */
+  label{display:block;font-weight:700;color:var(--ink);font-size:14px;margin-bottom:6px;}
+  label .opt{font-weight:400;color:var(--muted);font-size:12px;}
+  input[type=text],input[type=tel],input[type=number],select,textarea{
+    width:100%;min-height:52px;padding:12px 14px;border-radius:10px;
+    border:2px solid var(--line);background:var(--bg-deep);color:var(--ink);
+    font:inherit;font-size:16px;
+  }
+  textarea{min-height:64px;resize:vertical;}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--yellow);}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .grid .full{grid-column:1 / -1;}
+  @media (max-width:640px){.grid{grid-template-columns:1fr;}}
+  .field{margin-bottom:14px;}
+
+  .lang-toggle{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  @media (max-width:520px){.lang-toggle{grid-template-columns:1fr 1fr;}}
+  .lang-toggle button{
+    min-height:52px;border:2px solid var(--line);border-radius:10px;background:var(--bg-deep);
+    color:var(--body);font:inherit;font-weight:700;cursor:pointer;padding:8px 4px;
+  }
+  .lang-toggle button.on{border-color:var(--yellow);color:var(--yellow);background:var(--panel-2);}
+
+  #sigPad{
+    width:100%;height:170px;display:block;border:2px dashed var(--yellow);
+    border-radius:10px;background:#F8FAFC;touch-action:none;cursor:crosshair;
+  }
+  .sig-actions{display:flex;gap:10px;margin-top:8px;align-items:center;flex-wrap:wrap;}
+  .sig-status{font-size:13px;color:var(--muted);}
+  .sig-status.ok{color:var(--green);font-weight:700;}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    min-height:56px;padding:12px 22px;border-radius:10px;border:none;cursor:pointer;
+    font:inherit;font-weight:800;font-size:16px;text-decoration:none;
+  }
+  .btn-orange{background:var(--orange);color:#fff;}
+  .btn-orange:hover{background:var(--orange-dark);}
+  .btn-yellow{background:var(--yellow);color:#141B26;}
+  .btn-ghost{background:transparent;border:2px solid var(--line);color:var(--body);min-height:48px;font-size:14px;padding:8px 16px;}
+  .btn-ghost:hover{border-color:var(--yellow);color:var(--yellow);}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .btn-block{width:100%;}
+  .err{background:#7F1D1D;border:1px solid var(--red);color:#FECACA;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-weight:600;}
+  .ok-note{background:#14532D;border:1px solid var(--green);color:#BBF7D0;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-weight:600;}
+
+  /* ---------- Roster ---------- */
+  .roster-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+  .count-badge{background:var(--yellow);color:#141B26;font-weight:800;border-radius:999px;padding:4px 14px;font-size:14px;}
+  table{width:100%;border-collapse:collapse;}
+  th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{color:var(--yellow);font-size:13px;letter-spacing:.6px;text-transform:uppercase;}
+  td{color:var(--body);}
+  td .nm{color:var(--ink);font-weight:700;}
+  .sig-thumb{width:86px;height:34px;object-fit:contain;background:#F8FAFC;border-radius:4px;display:block;}
+  .lang-chip{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:12px;color:var(--ink);}
+  .empty{color:var(--muted);padding:18px 4px;text-align:center;}
+  @media (max-width:640px){
+    table,thead,tbody,tr,td,th{display:block;}
+    thead{display:none;}
+    tr{border:1px solid var(--line);border-radius:10px;margin-bottom:12px;padding:8px 10px;background:var(--bg-deep);}
+    td{border-bottom:none;padding:4px 0;}
+    td::before{content:attr(data-l);display:block;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);}
+  }
+
+  /* ---------- Weather ---------- */
+  .wx-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+  .wx-cell{background:var(--bg-deep);border:1px solid var(--line);border-radius:10px;padding:14px;}
+  .wx-cell .k{font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);}
+  .wx-cell .v{font-size:30px;font-weight:800;color:var(--ink);line-height:1.15;}
+  .wx-cell .v small{font-size:15px;color:var(--muted);font-weight:600;}
+  .alert{border-radius:10px;padding:12px 14px;font-weight:700;margin-top:12px;}
+  .alert.red{background:#7F1D1D;border:1px solid var(--red);color:#FECACA;}
+  .alert.amber{background:#713F12;border:1px solid var(--yellow);color:#FEF08A;}
+  .alert.green{background:#14532D;border:1px solid var(--green);color:#BBF7D0;}
+  .wx-meta{font-size:13px;color:var(--muted);margin-top:10px;}
+  .wind-note{font-size:13px;color:var(--muted);margin-top:6px;}
+
+  .permits{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media (max-width:560px){.permits{grid-template-columns:1fr;}}
+  .permit{
+    display:flex;gap:12px;align-items:flex-start;background:var(--bg-deep);
+    border:2px solid var(--line);border-radius:10px;padding:14px;cursor:pointer;min-height:56px;
+  }
+  .permit input{width:24px;height:24px;accent-color:var(--orange);flex:none;margin-top:2px;}
+  .permit span{font-weight:700;color:var(--ink);}
+  .permit small{display:block;font-weight:400;color:var(--muted);}
+  .permit:has(input:checked){border-color:var(--orange);}
+
+  .chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+  .chip{background:var(--bg-deep);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;color:var(--body);}
+  .chip b{color:var(--yellow);}
+
+  .photo-thumbs{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;}
+  .photo-thumbs figure{margin:0;width:110px;}
+  .photo-thumbs img{width:110px;height:82px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block;}
+  .photo-thumbs figcaption{font-size:11px;color:var(--muted);margin-top:4px;word-break:break-all;}
+
+  .briefing{
+    background:var(--bg-deep);border:1px solid var(--line);border-left:6px solid var(--yellow);
+    border-radius:10px;padding:18px;white-space:pre-wrap;color:var(--ink);
+    font-size:16.5px;line-height:1.65;min-height:120px;
+  }
+  .briefing.placeholder{color:var(--muted);font-style:italic;}
+  .hash{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;
+    word-break:break-all;background:var(--bg-deep);border:1px solid var(--line);
+    border-radius:8px;padding:10px 12px;color:var(--yellow);
+  }
+  .ledger-entry{border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px;background:var(--bg-deep);}
+  .ledger-entry .top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
+  .ledger-entry .top b{color:var(--ink);}
+  .seal-chip{background:var(--yellow);color:#141B26;font-weight:800;font-size:12px;border-radius:4px;padding:3px 9px;letter-spacing:.6px;}
+  .small{font-size:13px;color:var(--muted);}
+
+  /* ---------- Modal ---------- */
+  .modal-back{
+    display:none;position:fixed;inset:0;background:rgba(10,15,22,.82);z-index:80;
+    align-items:center;justify-content:center;padding:18px;
+  }
+  .modal-back.open{display:flex;}
+  .modal{background:var(--panel);border:2px solid var(--yellow);border-radius:var(--radius);padding:22px;max-width:380px;width:100%;text-align:center;}
+  .modal h3{margin-bottom:6px;}
+  #qrCanvas{background:#fff;border-radius:10px;padding:10px;display:inline-block;margin:12px 0;}
+  #qrCanvas canvas,#qrCanvas img{max-width:100%;height:auto;display:block;}
+
+  footer{border-top:1px solid var(--line);margin-top:10px;padding:18px 16px 30px;}
+  footer .wrap{padding-bottom:0;}
+  footer p{margin:0;font-size:13px;color:var(--muted);max-width:760px;}
+  @media print{
+    body{background:#fff;color:#000;}
+  }
+</style>
+</head>
+<body>
+
+<header class="strip">
+  <div class="wrap">
+    <h1>SITESAFETY <span class="ai">AI</span></h1>
+    <p>Crew sign-in, site weather sync, and a sealed OSHA audit trail — built for the trailer whiteboard and the field tablet. Walk the three phases in order: sign the crew in, set the site, generate and seal the morning talk.</p>
+    <div class="hazard" aria-hidden="true"></div>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Phases">
+  <div class="row">
+    <button class="tab active" data-tab="phase1">Phase 1<small>Crew Sign-In Log</small></button>
+    <button class="tab" data-tab="phase2">Phase 2<small>Site Setup &amp; Weather</small></button>
+    <button class="tab" data-tab="phase3">Phase 3<small>Safety Talk &amp; Ledger</small></button>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- ================= PHASE 1 ================= -->
+  <section class="phase active" id="phase1">
+    <div class="phase-head"><span class="phase-tag">Phase 1</span><h2>Morning Crew Attendance &amp; Sign-In Log</h2></div>
+    <p class="lede">The entry hub for workers arriving on site. Each worker signs in once; the roster below is what Phase 3 seals into the audit record.</p>
+
+    <div class="card">
+      <h3><span class="step">Worker Sign-In</span>Clock in a worker</h3>
+      <div class="err" id="p1Error" hidden></div>
+      <div class="grid">
+        <div class="field">
+          <label for="wName">Full Name</label>
+          <input type="text" id="wName" autocomplete="name" placeholder="e.g. Marcus Webb" />
+        </div>
+        <div class="field">
+          <label for="wTrade">Subcontractor Company / Trade</label>
+          <select id="wTrade">
+            <option value="">— Select trade —</option>
+            <option>Electrician</option>
+            <option>Scaffolder</option>
+            <option>Concrete</option>
+            <option>Framer</option>
+            <option>Ironworker</option>
+            <option>Plumber</option>
+            <option>General Laborer</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="wPhone">Phone Number</label>
+          <input type="tel" id="wPhone" autocomplete="tel" placeholder="(313) 555-0142" />
+        </div>
+        <div class="field">
+          <label for="wEmergency">Emergency Contact — Name &amp; Phone</label>
+          <input type="text" id="wEmergency" placeholder="e.g. Dana Webb — (313) 555-0119" />
+        </div>
+        <div class="field full">
+          <label>Preferred Language for Daily Safety Briefings</label>
+          <div class="lang-toggle" id="langToggle" role="group" aria-label="Briefing language">
+            <button type="button" data-lang="en" class="on">English</button>
+            <button type="button" data-lang="es">Spanish</button>
+            <button type="button" data-lang="pl">Polish</button>
+            <button type="button" data-lang="universal">OSHA Universal</button>
+          </div>
+        </div>
+        <div class="field full">
+          <label>Digital Touchscreen Signature <span class="opt">— sign with finger or mouse</span></label>
+          <canvas id="sigPad" width="680" height="170" aria-label="Signature pad"></canvas>
+          <div class="sig-actions">
+            <button type="button" class="btn btn-ghost" id="sigClear">Clear Signature</button>
+            <span class="sig-status" id="sigStatus">Signature required before clock-in.</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-orange btn-block" id="clockInBtn">Clock-In &amp; Confirm Daily Roster</button>
+    </div>
+
+    <div class="card">
+      <div class="roster-head">
+        <h3 style="margin:0;">Active Daily Roster</h3>
+        <span class="count-badge" id="rosterCount">0 on site</span>
+      </div>
+      <div class="ok-note" id="p1Ok" hidden></div>
+      <div id="rosterWrap">
+        <p class="empty">No workers clocked in yet. Sign in the first worker above, or open the field QR so the crew can start from their own phones.</p>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-yellow" id="qrBtn">Display Field Sign-In QR</button>
+        <button class="btn btn-ghost" id="goPhase2">Continue to Site Setup →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PHASE 2 ================= -->
+  <section class="phase" id="phase2">
+    <div class="phase-head"><span class="phase-tag">Phase 2</span><h2>Job Site Setup &amp; Location Hub</h2></div>
+    <p class="lede">Address and GPS stay bound together: type the street address to geocode it, or pull the device GPS and reverse-fill the address. Weather syncs automatically from the synced coordinates.</p>
+
+    <div class="card">
+      <h3><span class="step">Site Identity</span>Project &amp; location</h3>
+      <div class="err" id="p2Error" hidden></div>
+      <div class="ok-note" id="p2Ok" hidden></div>
+      <div class="grid">
+        <div class="field">
+          <label for="sProject">Project Name</label>
+          <input type="text" id="sProject" value="Rivergate Tower — Phase II" />
+        </div>
+        <div class="field">
+          <label for="sGC">General Contractor Name</label>
+          <input type="text" id="sGC" value="Briggs Construction Group" />
+        </div>
+        <div class="field full">
+          <label for="sAddress">Site Address / Street Input</label>
+          <input type="text" id="sAddress" placeholder="e.g. 1200 Woodward Ave, Detroit, MI" />
+        </div>
+        <div class="field">
+          <label for="sLat">GPS Latitude</label>
+          <input type="number" step="any" id="sLat" placeholder="42.3314" />
+        </div>
+        <div class="field">
+          <label for="sLon">GPS Longitude</label>
+          <input type="number" step="any" id="sLon" placeholder="-83.0458" />
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-orange" id="syncAddressBtn">Sync Address → GPS &amp; Weather</button>
+        <button class="btn btn-yellow" id="gpsBtn">Use My Current Device GPS</button>
+      </div>
+      <p class="wx-meta" id="syncStatus">No coordinates synced yet. Weather pulls from Open-Meteo as soon as a location is bound.</p>
+    </div>
+
+    <div class="card">
+      <h3><span class="step">Live Telemetry</span>Site weather — Open-Meteo</h3>
+      <div id="wxBody">
+        <p class="empty">Sync an address or device GPS above to load live site weather.</p>
+      </div>
+      <div id="wxAlerts"></div>
+    </div>
+
+    <div class="card">
+      <h3><span class="step">Manual Override</span>Conditions shifted? Correct the record.</h3>
+      <div class="grid">
+        <div class="field">
+          <label for="oTemp">Temperature (°F)</label>
+          <input type="number" step="any" id="oTemp" placeholder="Leave blank = live value" />
+        </div>
+        <div class="field">
+          <label for="oWind">Wind Speed (mph)</label>
+          <input type="number" step="any" id="oWind" placeholder="Leave blank = live value" />
+        </div>
+        <div class="field">
+          <label for="oGust">Wind Gusts (mph)</label>
+          <input type="number" step="any" id="oGust" placeholder="Leave blank = live value" />
+        </div>
+        <div class="field">
+          <label for="oRain">Rain Probability (%)</label>
+          <input type="number" step="any" min="0" max="100" id="oRain" placeholder="Leave blank = live value" />
+        </div>
+        <div class="field full">
+          <label for="oNote">Override Note <span class="opt">— recorded with the sealed briefing</span></label>
+          <input type="text" id="oNote" placeholder="e.g. Gust front moving in from the river, crane paused at 10:15" />
+        </div>
+      </div>
+      <button class="btn btn-ghost" id="applyOverride">Apply Override</button>
+      <span class="small" id="overrideStatus" style="margin-left:10px;"></span>
+      <div style="margin-top:16px;">
+        <button class="btn btn-orange" id="goPhase3">Continue to Safety Talk →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PHASE 3 ================= -->
+  <section class="phase" id="phase3">
+    <div class="phase-head"><span class="phase-tag">Phase 3</span><h2>Daily Morning Safety Talk Generator</h2></div>
+    <p class="lede">Everything from Phases 1 and 2 flows in automatically. Add permits and today's site photos, generate the briefing, read it aloud, then seal it into the ledger.</p>
+
+    <div class="card">
+      <h3><span class="step">Auto-Loaded Inputs</span>Context from Phases 1 &amp; 2</h3>
+      <div class="chip-row" id="ctxChips"></div>
+      <div class="field" style="margin-top:16px;">
+        <label for="photoInput">Upload Today's Site Photos <span class="opt">— filenames feed the briefing's hazard notes</span></label>
+        <input type="file" id="photoInput" accept="image/*" multiple />
+        <div class="photo-thumbs" id="photoThumbs"></div>
+      </div>
+      <div class="field" style="margin-top:6px;">
+        <label>Active Work Permits</label>
+        <div class="permits" id="permitGrid">
+          <label class="permit"><input type="checkbox" value="Hot Work" /><span>Hot Work<small>Welding, cutting, grinding — fire watch required</small></span></label>
+          <label class="permit"><input type="checkbox" value="Confined Space" /><span>Confined Space<small>Permit entry, attendant, atmospheric testing</small></span></label>
+          <label class="permit"><input type="checkbox" value="Working at Height" /><span>Working at Height<small>Fall protection, 100% tie-off over 6 ft</small></span></label>
+          <label class="permit"><input type="checkbox" value="Trenching/Excavation" /><span>Trenching / Excavation<small>Shoring, sloping, competent-person inspection</small></span></label>
+          <label class="permit"><input type="checkbox" value="Lockout/Tagout" /><span>Lockout / Tagout<small>Zero-energy verification before work starts</small></span></label>
+        </div>
+      </div>
+      <button class="btn btn-orange btn-block" id="genBtn">Generate Context-Fused Daily Safety Talk</button>
+      <div class="err" id="p3Error" hidden style="margin-top:14px;"></div>
+    </div>
+
+    <div class="card">
+      <h3><span class="step">Briefing Output</span>Today's 2-minute safety talk</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+        <span class="small" style="font-weight:700;color:var(--ink);">Read in:</span>
+        <div class="lang-toggle" id="briefLangToggle" style="flex:1;min-width:260px;">
+          <button type="button" data-lang="en" class="on">English</button>
+          <button type="button" data-lang="es">Spanish</button>
+          <button type="button" data-lang="pl">Polish</button>
+          <button type="button" data-lang="universal">OSHA Universal</button>
+        </div>
+      </div>
+      <div class="briefing placeholder" id="briefingOut">No briefing generated yet. Set permits above and press “Generate Context-Fused Daily Safety Talk.”</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
+        <button class="btn btn-yellow" id="ttsBtn" disabled>▶ Read Briefing Aloud (TTS)</button>
+        <button class="btn btn-orange" id="sealBtn" disabled>Seal into OSHA Audit Ledger</button>
+      </div>
+      <p class="small" id="ttsStatus" style="margin-top:8px;"></p>
+    </div>
+
+    <div class="card">
+      <h3><span class="step">Immutable Record</span>OSHA Audit Ledger</h3>
+      <p class="small" style="margin-top:-6px;">Append-only. Each sealed briefing is hashed with SHA-256 over the project ID, timestamp, address/GPS, weather, permits, briefing text, and every clocked-in worker's signature.</p>
+      <div id="ledgerWrap">
+        <p class="empty">No sealed entries yet. Generate a briefing and seal it to create the first ledger record.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ================= QR MODAL ================= -->
+<div class="modal-back" id="qrModal" role="dialog" aria-modal="true" aria-label="Field sign-in QR code">
+  <div class="modal">
+    <h3>Field Sign-In QR</h3>
+    <p class="small">Crew: point your phone camera at this code to open this sign-in page and clock in from your own device.</p>
+    <div id="qrCanvas"></div>
+    <p class="small" id="qrUrl" style="word-break:break-all;"></p>
+    <button class="btn btn-orange btn-block" id="qrClose">Close</button>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>SiteSafety AI — shareable demo build. Sign-ins, weather overrides, and ledger entries live in this page session only; closing or reloading the tab clears them. Weather data: Open-Meteo (free, no key). Geocoding: OpenStreetMap Nominatim.</p>
+  </div>
+</footer>
+
+<!-- ================= SEALED REPORT TEMPLATE (print/PDF view) ================= -->
+<div id="reportRoot" hidden></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================= STATE ============================= */
+var state = {
+  workers: [],            // {name, trade, phone, emergency, lang, timeISO, timeLabel, sig}
+  selectedLang: "en",
+  briefLang: "en",
+  site: { project:"", gc:"", address:"", lat:null, lon:null },
+  weather: null,          // {tempF, windMph, gustMph, rainProb, humidity, heatIndex, fetchedAt, source}
+  override: null,         // {tempF, windMph, gustMph, rainProb, note}
+  photos: [],             // {name, dataUrl}
+  permits: [],
+  briefing: null,         // {lang, text, generatedAtISO}
+  ledger: []              // sealed entries
+};
+
+var LANG_NAMES = { en:"English", es:"Spanish", pl:"Polish", universal:"OSHA Universal" };
+var TTS_LANG = { en:"en-US", es:"es-ES", pl:"pl-PL", universal:"en-US" };
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function showErr(id, msg){ var e=$(id); e.textContent=msg; e.hidden=false; }
+function hideErr(id){ $(id).hidden=true; }
+function fmtTime(d){ return d.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}); }
+
+/* ============================= TABS ============================= */
+var tabs = document.querySelectorAll(".tab");
+function goPhase(id){
+  tabs.forEach(function(t){ t.classList.toggle("active", t.getAttribute("data-tab")===id); });
+  document.querySelectorAll("section.phase").forEach(function(s){ s.classList.toggle("active", s.id===id); });
+  if(id==="phase3") renderContextChips();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+tabs.forEach(function(t){ t.addEventListener("click", function(){ goPhase(t.getAttribute("data-tab")); }); });
+$("goPhase2").addEventListener("click", function(){ goPhase("phase2"); });
+$("goPhase3").addEventListener("click", function(){ goPhase("phase3"); });
+
+/* ============================= SIGNATURE PAD ============================= */
+var sigCanvas = $("sigPad"), sigCtx = sigCanvas.getContext("2d"), sigHas = false, sigDrawing = false, sigLast = null;
+function sigSetup(){
+  var r = sigCanvas.getBoundingClientRect();
+  var dpr = window.devicePixelRatio || 1;
+  sigCanvas.width = Math.round(r.width * dpr);
+  sigCanvas.height = Math.round(170 * dpr);
+  sigCtx.setTransform(dpr,0,0,dpr,0,0);
+  sigCtx.lineWidth = 2.6; sigCtx.lineCap = "round"; sigCtx.lineJoin = "round"; sigCtx.strokeStyle = "#1E293B";
+}
+sigSetup();
+function sigPos(e){
+  var r = sigCanvas.getBoundingClientRect();
+  var t = (e.touches && e.touches[0]) ? e.touches[0] : e;
+  return { x: t.clientX - r.left, y: t.clientY - r.top };
+}
+function sigStart(e){
+  e.preventDefault(); sigDrawing = true; sigLast = sigPos(e);
+  sigCtx.beginPath(); sigCtx.moveTo(sigLast.x, sigLast.y); sigCtx.lineTo(sigLast.x + 0.1, sigLast.y + 0.1); sigCtx.stroke();
+  if(!sigHas){ sigHas = true; var st=$("sigStatus"); st.textContent="Signature captured."; st.classList.add("ok"); }
+}
+function sigMove(e){
+  if(!sigDrawing) return; e.preventDefault();
+  var p = sigPos(e);
+  sigCtx.beginPath(); sigCtx.moveTo(sigLast.x, sigLast.y); sigCtx.lineTo(p.x, p.y); sigCtx.stroke();
+  sigLast = p;
+  if(!sigHas){ sigHas = true; var st=$("sigStatus"); st.textContent="Signature captured."; st.classList.add("ok"); }
+}
+function sigEnd(){ sigDrawing = false; }
+sigCanvas.addEventListener("mousedown", sigStart);
+sigCanvas.addEventListener("mousemove", sigMove);
+window.addEventListener("mouseup", sigEnd);
+sigCanvas.addEventListener("touchstart", sigStart, {passive:false});
+sigCanvas.addEventListener("touchmove", sigMove, {passive:false});
+sigCanvas.addEventListener("touchend", sigEnd);
+$("sigClear").addEventListener("click", function(){
+  sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
+  sigHas = false;
+  var st=$("sigStatus"); st.textContent="Signature required before clock-in."; st.classList.remove("ok");
+});
+
+/* ============================= LANGUAGE TOGGLES ============================= */
+function wireToggle(el, cb){
+  el.querySelectorAll("button").forEach(function(b){
+    b.addEventListener("click", function(){
+      el.querySelectorAll("button").forEach(function(x){ x.classList.remove("on"); });
+      b.classList.add("on"); cb(b.getAttribute("data-lang"));
+    });
+  });
+}
+function setToggle(el, lang){
+  el.querySelectorAll("button").forEach(function(x){ x.classList.toggle("on", x.getAttribute("data-lang")===lang); });
+}
+wireToggle($("langToggle"), function(l){ state.selectedLang = l; });
+wireToggle($("briefLangToggle"), function(l){
+  state.briefLang = l;
+  if(state.briefing) renderBriefing();
+});
+
+/* ============================= PHASE 1: CLOCK-IN ============================= */
+$("clockInBtn").addEventListener("click", function(){
+  hideErr("p1Error"); $("p1Ok").hidden = true;
+  var name = $("wName").value.trim();
+  var trade = $("wTrade").value;
+  var phone = $("wPhone").value.trim();
+  var emergency = $("wEmergency").value.trim();
+  if(!name) return showErr("p1Error","Full name is required to clock in.");
+  if(!trade) return showErr("p1Error","Select the worker's subcontractor company / trade.");
+  if(!phone) return showErr("p1Error","Phone number is required.");
+  if(!emergency) return showErr("p1Error","Emergency contact name & phone is required.");
+  if(!sigHas) return showErr("p1Error","Signature required — the worker must sign the pad before clock-in.");
+  var now = new Date();
+  state.workers.push({
+    name:name, trade:trade, phone:phone, emergency:emergency,
+    lang: state.selectedLang, timeISO: now.toISOString(), timeLabel: fmtTime(now),
+    sig: sigCanvas.toDataURL("image/png")
+  });
+  renderRoster();
+  var ok = $("p1Ok");
+  ok.textContent = name + " clocked in at " + fmtTime(now) + " — roster now " + state.workers.length + " on site.";
+  ok.hidden = false;
+  // reset form
+  $("wName").value=""; $("wTrade").value=""; $("wPhone").value=""; $("wEmergency").value="";
+  $("sigClear").click();
+  $("wName").focus();
+});
+
+function renderRoster(){
+  var wrap = $("rosterWrap");
+  $("rosterCount").textContent = state.workers.length + " on site";
+  if(!state.workers.length){
+    wrap.innerHTML = '<p class="empty">No workers clocked in yet. Sign in the first worker above, or open the field QR so the crew can start from their own phones.</p>';
+    return;
+  }
+  var rows = state.workers.map(function(w){
+    return "<tr>" +
+      '<td data-l="Worker"><span class="nm">' + esc(w.name) + '</span></td>' +
+      '<td data-l="Trade / Company">' + esc(w.trade) + '</td>' +
+      '<td data-l="Signed In">' + esc(w.timeLabel) + '</td>' +
+      '<td data-l="Language"><span class="lang-chip">' + esc(LANG_NAMES[w.lang]) + '</span></td>' +
+      '<td data-l="Signature"><img class="sig-thumb" src="' + w.sig + '" alt="Signature of ' + esc(w.name) + '" /></td>' +
+    "</tr>";
+  }).join("");
+  wrap.innerHTML = '<table><thead><tr><th>Worker</th><th>Trade / Company</th><th>Signed In</th><th>Language</th><th>Signature</th></tr></thead><tbody>' + rows + "</tbody></table>";
+}
+
+/* ============================= QR MODAL ============================= */
+$("qrBtn").addEventListener("click", function(){
+  var url = window.location.href;
+  $("qrUrl").textContent = url;
+  var box = $("qrCanvas");
+  box.innerHTML = "";
+  if(window.QRCode && QRCode.toCanvas){
+    var cv = document.createElement("canvas");
+    box.appendChild(cv);
+    QRCode.toCanvas(cv, url, { width: 240, margin: 1 }, function(err){
+      if(err) box.innerHTML = '<p class="small">QR library unavailable — workers can open this page address directly:<br>' + esc(url) + "</p>";
+    });
+  } else {
+    box.innerHTML = '<p class="small">Workers can open this page address directly:<br>' + esc(url) + "</p>";
+  }
+  $("qrModal").classList.add("open");
+});
+$("qrClose").addEventListener("click", function(){ $("qrModal").classList.remove("open"); });
+$("qrModal").addEventListener("click", function(e){ if(e.target === this) this.classList.remove("open"); });
+
+/* ============================= PHASE 2: SITE + WEATHER ============================= */
+function heatIndexF(tF, rh){
+  if(tF < 80) return tF;
+  var T=tF, R=rh;
+  var hi = -42.379 + 2.04901523*T + 10.14333127*R - 0.22475541*T*R - 0.00683783*T*T
+         - 0.05481717*R*R + 0.00122874*T*T*R + 0.00085282*T*R*R - 0.00000199*T*T*R*R;
+  return Math.round(hi);
+}
+function readSiteFields(){
+  state.site.project = $("sProject").value.trim();
+  state.site.gc = $("sGC").value.trim();
+  state.site.address = $("sAddress").value.trim();
+  var la = parseFloat($("sLat").value), lo = parseFloat($("sLon").value);
+  state.site.lat = isNaN(la) ? null : la;
+  state.site.lon = isNaN(lo) ? null : lo;
+}
+function currentWeather(){
+  if(!state.weather) return null;
+  var w = {};
+  for(var k in state.weather) w[k] = state.weather[k];
+  if(state.override){
+    if(state.override.tempF!=null) w.tempF = state.override.tempF;
+    if(state.override.windMph!=null) w.windMph = state.override.windMph;
+    if(state.override.gustMph!=null) w.gustMph = state.override.gustMph;
+    if(state.override.rainProb!=null) w.rainProb = state.override.rainProb;
+    w.heatIndex = heatIndexF(w.tempF, w.humidity);
+    w.source = "Open-Meteo + manual override";
+  }
+  return w;
+}
+function weatherSummary(w){
+  if(!w) return "Weather not synced";
+  return w.tempF + "°F, wind " + w.windMph + " mph gusting " + w.gustMph + " mph, rain " + w.rainProb + "%, humidity " + w.humidity + "%, heat index " + w.heatIndex + "°F";
+}
+function renderWeather(){
+  var w = currentWeather();
+  var body = $("wxBody"), alerts = $("wxAlerts");
+  if(!w){ body.innerHTML = '<p class="empty">Sync an address or device GPS above to load live site weather.</p>'; alerts.innerHTML=""; return; }
+  function cell(k, v, unit){ return '<div class="wx-cell"><div class="k">' + k + '</div><div class="v">' + v + ' <small>' + unit + '</small></div></div>'; }
+  body.innerHTML = '<div class="wx-grid">' +
+    cell("Temperature", w.tempF, "°F") +
+    cell("Wind Speed", w.windMph, "mph") +
+    cell("Wind Gusts", w.gustMph, "mph") +
+    cell("Rain Probability", w.rainProb, "%") +
+    cell("Humidity", w.humidity, "%") +
+    cell("Heat Index", w.heatIndex, "°F") +
+    "</div>" +
+    '<p class="wx-meta">Source: ' + esc(w.source) + " · fetched " + esc(w.fetchedAt) + (state.site.address ? " · " + esc(state.site.address) : "") + " · " + state.site.lat.toFixed(4) + ", " + state.site.lon.toFixed(4) + "</p>" +
+    '<p class="wind-note">Wind gusts are the crane and scaffold watch number — lifts and elevated work pause at sustained gusts over 35 mph.</p>';
+  var html = "";
+  if(w.gustMph > 35) html += '<div class="alert red">⚠ HIGH-WIND ALERT — gusts ' + w.gustMph + ' mph exceed 35 mph. Pause crane lifts and scaffold work until gusts drop.</div>';
+  if(w.heatIndex >= 103) html += '<div class="alert red">⚠ HEAT DANGER — heat index ' + w.heatIndex + '°F. Mandatory shade, water, and rest cycles; watch for heat stroke symptoms.</div>';
+  else if(w.heatIndex >= 91) html += '<div class="alert amber">Heat caution — heat index ' + w.heatIndex + '°F. Enforce water breaks every 20 minutes; buddy-check for heat illness.</div>';
+  if(w.rainProb >= 60) html += '<div class="alert amber">Rain likely (' + w.rainProb + '%). Secure loose material, check trench walls after rain, watch for lightning stand-down.</div>';
+  if(!html) html = '<div class="alert green">Conditions within normal limits. Standard PPE and housekeeping rules apply.</div>';
+  alerts.innerHTML = html;
+}
+function fetchWeather(lat, lon){
+  var url = "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
+    "&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_gusts_10m" +
+    "&hourly=precipitation_probability&forecast_days=1&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto";
+  $("syncStatus").textContent = "Fetching live weather from Open-Meteo…";
+  return fetch(url).then(function(r){ if(!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(function(d){
+      var c = d.current || {};
+      var hourIdx = 0;
+      if(d.hourly && d.hourly.time && c.time){
+        var idx = d.hourly.time.indexOf(c.time);
+        if(idx >= 0) hourIdx = idx;
+      }
+      var rain = (d.hourly && d.hourly.precipitation_probability && d.hourly.precipitation_probability[hourIdx] != null) ? d.hourly.precipitation_probability[hourIdx] : 0;
+      var tempF = Math.round(c.temperature_2m);
+      state.weather = {
+        tempF: tempF,
+        windMph: Math.round(c.wind_speed_10m),
+        gustMph: Math.round(c.wind_gusts_10m),
+        rainProb: Math.round(rain),
+        humidity: Math.round(c.relative_humidity_2m),
+        heatIndex: heatIndexF(tempF, c.relative_humidity_2m),
+        fetchedAt: new Date().toLocaleString(),
+        source: "Open-Meteo (live)"
+      };
+      renderWeather();
+    });
+}
+function setCoords(lat, lon){
+  $("sLat").value = lat.toFixed(6);
+  $("sLon").value = lon.toFixed(6);
+  readSiteFields();
+}
+$("syncAddressBtn").addEventListener("click", function(){
+  hideErr("p2Error"); $("p2Ok").hidden = true;
+  readSiteFields();
+  var addr = state.site.address;
+  if(!addr) return showErr("p2Error","Enter a site address first — or use the device GPS button.");
+  $("syncStatus").textContent = "Geocoding address…";
+  fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(addr))
+    .then(function(r){ if(!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(function(res){
+      if(!res || !res.length) throw new Error("Address not found");
+      setCoords(parseFloat(res[0].lat), parseFloat(res[0].lon));
+      $("sAddress").value = res[0].display_name;
+      state.site.address = res[0].display_name;
+      return fetchWeather(state.site.lat, state.site.lon);
+    })
+    .then(function(){
+      $("syncStatus").textContent = "Address, GPS, and weather synced at " + new Date().toLocaleTimeString() + ".";
+      var ok=$("p2Ok"); ok.textContent = "Site synced: " + state.site.address + " (" + state.site.lat.toFixed(4) + ", " + state.site.lon.toFixed(4) + ") — weather live."; ok.hidden=false;
+    })
+    .catch(function(){
+      showErr("p2Error","Could not sync that address. Check the street address, or use “Use My Current Device GPS.”");
+      $("syncStatus").textContent = "Sync failed — no coordinates bound.";
+    });
+});
+$("gpsBtn").addEventListener("click", function(){
+  hideErr("p2Error"); $("p2Ok").hidden = true;
+  if(!navigator.geolocation) return showErr("p2Error","This device does not expose GPS geolocation.");
+  $("syncStatus").textContent = "Requesting device GPS…";
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var lat = pos.coords.latitude, lon = pos.coords.longitude;
+    setCoords(lat, lon);
+    fetch("https://nominatim.openstreetmap.org/reverse?format=json&lat=" + lat + "&lon=" + lon)
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(d && d.display_name){ $("sAddress").value = d.display_name; state.site.address = d.display_name; }
+      })
+      .catch(function(){})
+      .then(function(){ return fetchWeather(lat, lon); })
+      .then(function(){
+        $("syncStatus").textContent = "Device GPS bound at " + new Date().toLocaleTimeString() + " — address and weather synced.";
+        var ok=$("p2Ok"); ok.textContent = "GPS locked: " + lat.toFixed(4) + ", " + lon.toFixed(4) + " — weather live."; ok.hidden=false;
+      })
+      .catch(function(){ showErr("p2Error","GPS locked, but the weather fetch failed. Check the connection and retry."); });
+  }, function(){
+    showErr("p2Error","GPS permission denied or unavailable. Enter the site address instead.");
+    $("syncStatus").textContent = "GPS unavailable.";
+  }, { enableHighAccuracy:true, timeout:12000 });
+});
+$("applyOverride").addEventListener("click", function(){
+  function num(id){ var v = parseFloat($(id).value); return isNaN(v) ? null : v; }
+  state.override = {
+    tempF: num("oTemp"), windMph: num("oWind"), gustMph: num("oGust"), rainProb: num("oRain"),
+    note: $("oNote").value.trim()
+  };
+  if(state.override.tempF==null && state.override.windMph==null && state.override.gustMph==null && state.override.rainProb==null && !state.override.note){
+    state.override = null;
+    $("overrideStatus").textContent = "Nothing to override — all fields blank.";
+    return;
+  }
+  $("overrideStatus").textContent = "Override applied — sealed briefings will use these values and carry the note.";
+  renderWeather();
+});
+
+/* ============================= PHASE 3 ============================= */
+$("photoInput").addEventListener("change", function(){
+  var files = Array.prototype.slice.call(this.files || []);
+  state.photos = [];
+  $("photoThumbs").innerHTML = "";
+  files.forEach(function(f){
+    var reader = new FileReader();
+    reader.onload = function(){
+      state.photos.push({ name: f.name, dataUrl: reader.result });
+      var fig = document.createElement("figure");
+      fig.innerHTML = '<img src="' + reader.result + '" alt="Site photo ' + esc(f.name) + '" /><figcaption>' + esc(f.name) + "</figcaption>";
+      $("photoThumbs").appendChild(fig);
+    };
+    reader.readAsDataURL(f);
+  });
+});
+function selectedPermits(){
+  return Array.prototype.slice.call(document.querySelectorAll("#permitGrid input:checked")).map(function(i){ return i.value; });
+}
+function hazardNotes(){
+  var notes = [];
+  state.photos.forEach(function(p){
+    var n = p.name.toLowerCase();
+    if(/ladder|scaffold|lift|height|roof|edge/.test(n)) notes.push("Photo “" + p.name + "” shows elevated work — verify guardrails, harness tie-off, and ladder footing before anyone goes up.");
+    else if(/trench|excavat|dig|soil/.test(n)) notes.push("Photo “" + p.name + "” shows excavation — competent person inspects walls, shoring in place, spoil piles set back 2 ft minimum.");
+    else if(/crane|rigging|load|hoist/.test(n)) notes.push("Photo “" + p.name + "” shows lifting operations — check rigging tags, tag lines on, nobody under a suspended load.");
+    else if(/elect|panel|wire|cord/.test(n)) notes.push("Photo “" + p.name + "” shows electrical exposure — GFCI protection on, damaged cords out of service, panels kept clear.");
+    else notes.push("Photo “" + p.name + "” reviewed — housekeeping check: keep walk paths clear and materials stacked stable.");
+  });
+  return notes;
+}
+function renderContextChips(){
+  readSiteFields();
+  var w = currentWeather();
+  var trades = {};
+  state.workers.forEach(function(x){ trades[x.trade] = true; });
+  var langs = {};
+  state.workers.forEach(function(x){ langs[LANG_NAMES[x.lang]] = true; });
+  var chips = [
+    "<b>" + state.workers.length + "</b>&nbsp;workers on roster",
+    "Trades: <b>" + (Object.keys(trades).join(", ") || "none yet") + "</b>",
+    "Languages: <b>" + (Object.keys(langs).join(", ") || "none yet") + "</b>",
+    "Site: <b>" + esc(state.site.project || "not set") + "</b>",
+    "Address: <b>" + esc(state.site.address || "not synced") + "</b>",
+    "GPS: <b>" + (state.site.lat!=null ? state.site.lat.toFixed(4) + ", " + state.site.lon.toFixed(4) : "not synced") + "</b>",
+    "Weather: <b>" + esc(weatherSummary(w)) + "</b>"
+  ];
+  $("ctxChips").innerHTML = chips.map(function(c){ return '<span class="chip">' + c + "</span>"; }).join("");
+}
+
+var PERMIT_LINES = {
+  en: {
+    "Hot Work": "HOT WORK is active today. Fire watch posted during and 30 minutes after all welding and cutting. Extinguishers within 25 feet, combustibles cleared 35 feet.",
+    "Confined Space": "CONFINED SPACE entry is on. No entry without a signed permit, attendant posted, and atmospheric test logged — oxygen, LEL, H2S, CO.",
+    "Working at Height": "WORKING AT HEIGHT today. 100% tie-off above 6 feet, harnesses inspected before the shift, no dropped-object zones left unbarricaded.",
+    "Trenching/Excavation": "TRENCHING is open. Competent person inspects before entry and after any rain. Shoring or sloping in place, ladders every 25 feet, spoil set back.",
+    "Lockout/Tagout": "LOCKOUT/TAGOUT in effect. Every energy source locked, tagged, and verified at zero energy before hands go on equipment. Your lock, your key."
+  },
+  es: {
+    "Hot Work": "TRABAJO EN CALIENTE activo hoy. Vigilancia contra incendios durante y 30 minutos después de soldar y cortar. Extintores a menos de 25 pies, combustibles retirados a 35 pies.",
+    "Confined Space": "ENTRADA A ESPACIOS CONFINADOS hoy. Sin entrada sin permiso firmado, vigilante asignado y prueba atmosférica registrada: oxígeno, LEL, H2S, CO.",
+    "Working at Height": "TRABAJO EN ALTURA hoy. Amarre al 100% por encima de 6 pies, arneses inspeccionados antes del turno, zonas de caída de objetos acordonadas.",
+    "Trenching/Excavation": "ZANJAS abiertas. La persona competente inspecciona antes de entrar y después de la lluvia. Entibado o taludes en su lugar, escaleras cada 25 pies.",
+    "Lockout/Tagout": "BLOQUEO Y ETIQUETADO en vigor. Toda fuente de energía bloqueada, etiquetada y verificada en energía cero antes de tocar el equipo. Su candado, su llave."
+  },
+  pl: {
+    "Hot Work": "PRACE GORĄCE aktywne dzisiaj. Dozór przeciwpożarowy w trakcie i 30 minut po spawaniu i cięciu. Gaśnice w odległości 25 stóp, materiały palne usunięte na 35 stóp.",
+    "Confined Space": "WEJŚCIE DO PRZESTRZENI ZAMKNIĘTYCH dzisiaj. Zakaz wejścia bez podpisanego pozwolenia, wyznaczonego obserwatora i zarejestrowanego pomiaru atmosfery: tlen, LEL, H2S, CO.",
+    "Working at Height": "PRACA NA WYSOKOŚCI dzisiaj. 100% przypięcia powyżej 6 stóp, uprzęże sprawdzone przed zmianą, strefy spadających przedmiotów odgrodzone.",
+    "Trenching/Excavation": "WYKOPY otwarte. Osoba kompetentna sprawdza przed wejściem i po każdym deszczu. Obudowa lub skarpy na miejscu, drabiny co 25 stóp.",
+    "Lockout/Tagout": "BLOKADA I OZNAKOWANIE (LOTO) obowiązuje. Każde źródło energii zablokowane, oznaczone i zweryfikowane jako zero energii przed pracą przy urządzeniu. Twój zamek, twój klucz."
+  }
+};
+
+function buildBriefing(lang){
+  readSiteFields();
+  var w = currentWeather();
+  var tradesList = [];
+  var seen = {};
+  state.workers.forEach(function(x){ if(!seen[x.trade]){ seen[x.trade]=true; tradesList.push(x.trade); } });
+  var permits = selectedPermits();
+  var hazards = hazardNotes();
+  var dateStr = new Date().toLocaleDateString([], { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+  var wxLine = w ? ("Conditions right now: " + w.tempF + "°F, wind " + w.windMph + " mph gusting " + w.gustMph + " mph, rain probability " + w.rainProb + "%, humidity " + w.humidity + "%, heat index " + w.heatIndex + "°F.")
+                 : "Weather has not been synced yet — the foreman confirms sky and wind conditions verbally before work starts.";
+  var windLine = "";
+  if(w && w.gustMph > 35) windLine = "STOP-WORK WEATHER: gusts over 35 mph. Crane lifts and scaffold work are paused until gusts drop. Secure every loose sheet, panel, and tarp on deck.";
+  else if(w && w.heatIndex >= 91) windLine = "HEAT PLAN ACTIVE: heat index " + w.heatIndex + "°F. Water at every work area, shade breaks every 20 minutes, buddy system on — report dizziness or nausea immediately.";
+  else if(w && w.rainProb >= 60) windLine = "WET WEATHER PLAN: rain is likely. Watch footing on decks and ladders, re-inspect trench walls after rain, and stand down for lightning within 6 miles.";
+  var permitText = permits.length
+    ? permits.map(function(p){ return (PERMIT_LINES[lang] && PERMIT_LINES[lang][p]) || PERMIT_LINES.en[p]; }).join("\n")
+    : { en:"No special permits are active today. General rules govern all work.", es:"Hoy no hay permisos especiales activos. Rigen las reglas generales.", pl:"Dziś nie ma aktywnych pozwoleń specjalnych. Obowiązują zasady ogólne.", universal:"No special permits active. General site rules apply to all work." }[lang];
+  var hazardText = hazards.length ? hazards.join("\n") : "No site photos uploaded today — foreman walk-through notes govern. Report any hazard you see to the trailer immediately.";
+
+  if(lang === "es"){
+    return "CHARLA DE SEGURIDAD — " + (state.site.project || "Obra") + "\n" + dateStr + " · " + (state.site.address || "Dirección no sincronizada") + "\n\nBuenos días a todos. Presentes hoy: " + state.workers.length + " trabajadores — " + (tradesList.join(", ") || "sin oficios registrados") + ".\n\nCLIMA: " + wxLine + "\n" + (windLine || "Condiciones dentro de los límites normales.") + "\n\nPERMISOS ACTIVOS:\n" + permitText + "\n\nFOTOS DEL SITIO Y PELIGROS:\n" + hazardText + "\n\nREGLAS QUE NO SE NEGOCIAN: EPP completo en todo momento. Nada de trabajo bajo cargas suspendidas. Cada lesión, por pequeña que sea, se reporta hoy. Si algo se ve inseguro, deténgase y llame al capataz — nadie será castigado por detener un trabajo inseguro.\n\nTrabajen con seguridad. Cuiden a su compañero.";
+  }
+  if(lang === "pl"){
+    return "ODPRAWA BHP — " + (state.site.project || "Budowa") + "\n" + dateStr + " · " + (state.site.address || "Adres niesynchronizowany") + "\n\nDzień dobry wszystkim. Obecnych dzisiaj: " + state.workers.length + " pracowników — " + (tradesList.join(", ") || "brak zarejestrowanych branż") + ".\n\nPOGODA: " + wxLine + "\n" + (windLine || "Warunki w normie.") + "\n\nAKTYWNE POZWOLENIA:\n" + permitText + "\n\nZDJĘCIA BUDOWY I ZAGROŻENIA:\n" + hazardText + "\n\nZASADY BEZ WYJĄTKÓW: pełne ŚOI przez cały czas. Zakaz pracy pod zawieszonymi ładunkami. Każdy uraz, nawet najmniejszy, zgłaszamy dzisiaj. Jeśli coś wygląda niebezpiecznie, zatrzymaj pracę i zawołaj brygadzistę — nikt nie poniesie kary za zatrzymanie niebezpiecznej pracy.\n\nPracujcie bezpiecznie. Dbajcie o siebie nawzajem.";
+  }
+  if(lang === "universal"){
+    return "SAFETY BRIEFING — " + (state.site.project || "Job Site") + " — " + dateStr + "\n\nCREW TODAY: " + state.workers.length + " workers. Trades: " + (tradesList.join(", ") || "none logged") + ".\nWEATHER: " + wxLine + "\n\nSTOP — LOOK — THINK — ACT.\n⚠ HARD HAT ON. ⚠ GLOVES ON. ⚠ EYE PROTECTION ON.\n✋ STOP work that looks unsafe. Point. Call the foreman.\n💧 DRINK WATER. Rest in shade.\n🚫 NO work under loads in the air.\n📋 PERMITS TODAY: " + (permits.join(", ") || "none") + ".\n\n" + permitText + "\n\nSITE PHOTOS REVIEWED: " + (state.photos.length ? state.photos.map(function(p){return p.name;}).join(", ") : "none uploaded") + ".\nEveryone goes home safe. Every day.";
+  }
+  return "MORNING SAFETY TALK — " + (state.site.project || "Job Site") + "\n" + dateStr + " · " + (state.site.gc || "General Contractor") + "\nSite: " + (state.site.address || "address not synced") + (state.site.lat!=null ? " (" + state.site.lat.toFixed(4) + ", " + state.site.lon.toFixed(4) + ")" : "") + "\n\nGood morning, everyone. Eyes on me for two minutes. On site today: " + state.workers.length + " workers — " + (tradesList.join(", ") || "no trades logged yet") + ". If your name is not on the roster, you are not cleared to work — see the trailer first.\n\nWEATHER & CONDITIONS\n" + wxLine + (windLine ? "\n" + windLine : "\nConditions are inside normal limits — standard controls apply.") + "\n\nACTIVE PERMITS\n" + permitText + "\n\nSITE PHOTOS & HAZARDS\n" + hazardText + "\n\nNON-NEGOTIABLES\nFull PPE at all times — hard hat, eye protection, gloves, hi-vis. Nobody works under a suspended load. Every injury, however small, gets reported today, not tomorrow. And the standing rule: if it looks unsafe, stop and call it in. Nobody on this site gets in trouble for stopping unsafe work — ever.\n\nLook out for the person next to you. Let's get everyone home in the same shape they arrived. Questions before we break?";
+}
+
+$("genBtn").addEventListener("click", function(){
+  hideErr("p3Error");
+  readSiteFields();
+  if(!state.workers.length) return showErr("p3Error","The roster is empty — clock in at least one worker in Phase 1 before generating the talk.");
+  if(state.site.lat == null) return showErr("p3Error","No site location synced — bind the address or GPS in Phase 2 so the briefing carries real site coordinates.");
+  state.permits = selectedPermits();
+  state.briefing = { lang: state.briefLang, text: buildBriefing(state.briefLang), generatedAtISO: new Date().toISOString() };
+  renderBriefing();
+});
+function renderBriefing(){
+  if(!state.briefing) return;
+  var text = buildBriefing(state.briefLang);
+  state.briefing.text = text;
+  state.briefing.lang = state.briefLang;
+  var out = $("briefingOut");
+  out.textContent = text;
+  out.classList.remove("placeholder");
+  $("ttsBtn").disabled = false;
+  $("sealBtn").disabled = false;
+}
+
+/* ============================= TTS ============================= */
+$("ttsBtn").addEventListener("click", function(){
+  if(!state.briefing) return;
+  if(!("speechSynthesis" in window)){ $("ttsStatus").textContent = "Speech synthesis is not available in this browser."; return; }
+  if(window.speechSynthesis.speaking){ window.speechSynthesis.cancel(); $("ttsBtn").textContent = "▶ Read Briefing Aloud (TTS)"; $("ttsStatus").textContent = "Playback stopped."; return; }
+  var u = new SpeechSynthesisUtterance(state.briefing.text);
+  u.lang = TTS_LANG[state.briefLang] || "en-US";
+  u.rate = 0.98;
+  u.onend = function(){ $("ttsBtn").textContent = "▶ Read Briefing Aloud (TTS)"; $("ttsStatus").textContent = "Finished reading the briefing."; };
+  u.onerror = function(){ $("ttsBtn").textContent = "▶ Read Briefing Aloud (TTS)"; };
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(u);
+  $("ttsBtn").textContent = "⏸ Stop Reading";
+  $("ttsStatus").textContent = "Reading the " + LANG_NAMES[state.briefLang] + " briefing aloud…";
+});
+
+/* ============================= SHA-256 SEAL + LEDGER ============================= */
+function sha256Hex(str){
+  return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(function(buf){
+    return Array.prototype.map.call(new Uint8Array(buf), function(b){ return b.toString(16).padStart(2,"0"); }).join("");
+  });
+}
+$("sealBtn").addEventListener("click", function(){
+  if(!state.briefing) return;
+  readSiteFields();
+  var w = currentWeather();
+  var ts = new Date().toISOString();
+  var projectId = (state.site.project || "UNSPECIFIED-PROJECT").replace(/\s+/g,"-").toUpperCase();
+  var payload = [
+    projectId,
+    ts,
+    (state.site.address || "") + " | " + (state.site.lat!=null ? state.site.lat : "") + "," + (state.site.lon!=null ? state.site.lon : ""),
+    weatherSummary(w),
+    selectedPermits().join(", "),
+    state.briefing.text,
+    state.workers.map(function(x){ return x.sig; }).join("|")
+  ].join("\n");
+  sha256Hex(payload).then(function(hash){
+    var entry = {
+      id: "SSA-" + (state.ledger.length + 1).toString().padStart(3,"0"),
+      projectId: projectId,
+      project: state.site.project, gc: state.site.gc,
+      timestampISO: ts, timestampLabel: new Date().toLocaleString(),
+      address: state.site.address, lat: state.site.lat, lon: state.site.lon,
+      weather: w, weatherText: weatherSummary(w),
+      overrideNote: state.override ? state.override.note : "",
+      permits: selectedPermits(),
+      photos: state.photos.map(function(p){ return p.name; }),
+      lang: state.briefLang,
+      briefingText: state.briefing.text,
+      workers: state.workers.map(function(x){ return { name:x.name, trade:x.trade, lang:x.lang, timeLabel:x.timeLabel, sig:x.sig }; }),
+      hash: hash
+    };
+    state.ledger.push(entry);
+    renderLedger();
+    $("sealBtn").textContent = "✓ Sealed — Seal Another Copy";
+  });
+});
+function renderLedger(){
+  var wrap = $("ledgerWrap");
+  if(!state.ledger.length){
+    wrap.innerHTML = '<p class="empty">No sealed entries yet. Generate a briefing and seal it to create the first ledger record.</p>';
+    return;
+  }
+  wrap.innerHTML = state.ledger.map(function(e, i){
+    return '<div class="ledger-entry">' +
+      '<div class="top"><b>' + esc(e.id) + " · " + esc(e.project || e.projectId) + '</b><span class="seal-chip">SEALED</span></div>' +
+      '<div class="small">' + esc(e.timestampLabel) + " · " + esc(e.address || "address n/a") + " · " + e.workers.length + " signatures · Permits: " + esc(e.permits.join(", ") || "none") + " · Briefing language: " + esc(LANG_NAMES[e.lang]) + "</div>" +
+      '<div class="small" style="margin:6px 0 2px;">Weather at seal: ' + esc(e.weatherText) + "</div>" +
+      '<div class="hash">SHA-256 · ' + e.hash + "</div>" +
+      '<div style="margin-top:10px;"><button class="btn btn-yellow" data-export="' + i + '">Export Sealed OSHA Report (PDF)</button></div>' +
+    "</div>";
+  }).join("");
+  wrap.querySelectorAll("[data-export]").forEach(function(b){
+    b.addEventListener("click", function(){ exportReport(state.ledger[parseInt(b.getAttribute("data-export"),10)]); });
+  });
+}
+
+/* ============================= PDF EXPORT (print window) ============================= */
+function exportReport(e){
+  var sigCells = e.workers.map(function(w){
+    return '<div style="width:31%;display:inline-block;vertical-align:top;margin:0 1% 14px 0;border:1px solid #999;padding:8px;">' +
+      '<img src="' + w.sig + '" style="width:100%;height:44px;object-fit:contain;" alt="" />' +
+      '<div style="font-size:11px;border-top:1px solid #999;padding-top:4px;">' + esc(w.name) + " — " + esc(w.trade) + "<br/>Signed in " + esc(w.timeLabel) + " · Briefing language: " + esc(LANG_NAMES[w.lang]) + "</div></div>";
+  }).join("");
+  var html = '<!doctype html><html><head><meta charset="utf-8"><title>Sealed OSHA Report ' + esc(e.id) + '</title>' +
+    '<style>body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:32px;font-size:13px;}h1{font-size:20px;margin:0 0 2px;}h2{font-size:14px;margin:18px 0 6px;border-bottom:2px solid #111;padding-bottom:3px;}table{border-collapse:collapse;width:100%;}td,th{border:1px solid #999;padding:5px 7px;text-align:left;font-size:12px;}pre{white-space:pre-wrap;font-family:inherit;font-size:12.5px;line-height:1.55;}.hash{font-family:Consolas,monospace;font-size:11px;word-break:break-all;border:1px solid #111;padding:8px;}.band{background:#FFD700;padding:6px 10px;font-weight:bold;letter-spacing:1px;}</style></head><body>' +
+    '<div class="band">SITESAFETY AI — SEALED OSHA SAFETY RECORD</div>' +
+    "<h1>" + esc(e.project || e.projectId) + "</h1>" +
+    "<div>General Contractor: " + esc(e.gc || "—") + " · Entry " + esc(e.id) + " · Sealed " + esc(e.timestampLabel) + "</div>" +
+    "<h2>Site & Weather at Time of Briefing</h2>" +
+    "<table><tr><th>Address</th><td>" + esc(e.address || "—") + "</td><th>GPS</th><td>" + (e.lat!=null ? e.lat.toFixed(5) + ", " + e.lon.toFixed(5) : "—") + "</td></tr>" +
+    "<tr><th>Weather</th><td colspan='3'>" + esc(e.weatherText) + "</td></tr>" +
+    (e.overrideNote ? "<tr><th>Override Note</th><td colspan='3'>" + esc(e.overrideNote) + "</td></tr>" : "") +
+    "<tr><th>Active Permits</th><td colspan='3'>" + esc(e.permits.join(", ") || "None") + "</td></tr>" +
+    "<tr><th>Site Photos</th><td colspan='3'>" + esc(e.photos.join(", ") || "None uploaded") + "</td></tr></table>" +
+    "<h2>Daily Safety Briefing (" + esc(LANG_NAMES[e.lang]) + ")</h2><pre>" + esc(e.briefingText) + "</pre>" +
+    "<h2>Crew Attendance & Signatures (" + e.workers.length + ")</h2>" + (sigCells || "<p>No signatures recorded.</p>") +
+    "<h2>Cryptographic Verification</h2>" +
+    "<p>SHA-256 digest computed over: Project ID + Timestamp + Address/GPS + Weather + Active Permits + Briefing Text + Worker Signatures.</p>" +
+    '<div class="hash">' + e.hash + "</div>" +
+    "<p style='font-size:11px;color:#444;'>Recomputing the digest over the same inputs must reproduce this value exactly; any change to the record invalidates the seal. Generated by SiteSafety AI.</p>" +
+    "</body></html>";
+  var root = $("reportRoot");
+  root.innerHTML = "";
+  var ifr = document.createElement("iframe");
+  ifr.setAttribute("aria-hidden","true");
+  ifr.style.cssText = "position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;";
+  root.appendChild(ifr);
+  var doc = ifr.contentWindow.document;
+  doc.open(); doc.write(html); doc.close();
+  setTimeout(function(){
+    try { ifr.contentWindow.focus(); ifr.contentWindow.print(); }
+    catch(err){ $("ttsStatus").textContent = "Print dialog blocked in this frame — the sealed record remains in the ledger above."; }
+  }, 450);
+}
+
+renderWeather();
+})();
+</script>
+</body>
+</html>
